@@ -72,9 +72,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     key: const ValueKey('start'),
                     onPressed: _riwaya == null
                         ? null
-                        : () => AppState.of(context)
-                            .settings
-                            .completeOnboarding(riwaya: _riwaya!, language: _language),
+                        : () => AppState.of(context).settings.completeOnboarding(riwaya: _riwaya!, language: _language),
                     child: Text(s.start),
                   ),
                 ],

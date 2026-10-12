@@ -76,7 +76,7 @@ class Aya {
 /// One riwaya's full text, loaded from the bundled assets.
 class Mushaf {
   Mushaf._(this.riwaya, this.pageCount, this.suras, this.ayat, this.sourceSha1)
-      : _pageStarts = _indexPages(ayat, pageCount);
+    : _pageStarts = _indexPages(ayat, pageCount);
 
   final Riwaya riwaya;
   final int pageCount;
@@ -127,8 +127,7 @@ class Mushaf {
           pageEnd: rows[i][3] as int,
           juz: rows[i][4] as int,
           text: rows[i][7] as String,
-          searchText: normalizeArabic(
-              (rows[i][8] as String).isNotEmpty ? rows[i][8] as String : rows[i][7] as String),
+          searchText: normalizeArabic((rows[i][8] as String).isNotEmpty ? rows[i][8] as String : rows[i][7] as String),
           searchTextAlef: normalizeArabic((rows[i][7] as String).replaceAll('\u0670', '\u0627')),
         ),
     ];
@@ -148,11 +147,14 @@ class Mushaf {
 
   /// The tajweed colouring of [basmala], taken from 27:30 like the text.
   List<TajweedSpan> get basmalaTajweed => [
-        for (final s in tajweed?.ayat[find(27, 30)!.index] ?? const <TajweedSpan>[])
-          if (s.end > _basmalaStart)
-            TajweedSpan(s.color, (s.start - _basmalaStart).clamp(0, basmala.length),
-                (s.end - _basmalaStart).clamp(0, basmala.length)),
-      ];
+    for (final s in tajweed?.ayat[find(27, 30)!.index] ?? const <TajweedSpan>[])
+      if (s.end > _basmalaStart)
+        TajweedSpan(
+          s.color,
+          (s.start - _basmalaStart).clamp(0, basmala.length),
+          (s.end - _basmalaStart).clamp(0, basmala.length),
+        ),
+  ];
 
   /// In the Kufan count (Hafs, Shu'bah) Al-Fatiha's first aya is the basmala
   /// itself; in the others it is printed above the sura and not counted.
@@ -192,8 +194,7 @@ class Mushaf {
   }
 }
 
-final _marks = RegExp(
-    '[ؐ-ًؚ-ٰٟۖ-ۭ࣓-ࣿـ ‏۞۩٠-٩]');
+final _marks = RegExp('[ؐ-ًؚ-ٰٟۖ-ۭ࣓-ࣿـ ‏۞۩٠-٩]');
 
 /// Strips diacritics and Quranic marks and unifies letter forms so that a
 /// query typed on a normal keyboard matches the Uthmani text.

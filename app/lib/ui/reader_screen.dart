@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/printed.dart';
 import '../data/quran.dart';
 import '../l10n.dart';
 import '../main.dart';
 import '../settings.dart';
 import 'mushaf_page.dart';
+import 'printed_page.dart';
+import 'settings_screen.dart';
 
 /// Free reading. Turning pages only updates this device's last page; nothing
 /// here is synced. The wird has its own mode in phase 2.
@@ -60,16 +63,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final picked = await showModalBottomSheet<Riwaya>(
       context: context,
       builder: (context) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          ListTile(title: Text(s.switchRiwaya)),
-          for (final r in Riwaya.values)
-            ListTile(
-              key: ValueKey('pick-${r.name}'),
-              title: Text(s.riwaya(r)),
-              trailing: r == _mushaf.riwaya ? const Icon(Icons.check) : null,
-              onTap: () => Navigator.pop(context, r),
-            ),
-        ]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(title: Text(s.switchRiwaya)),
+            for (final r in Riwaya.values)
+              ListTile(
+                key: ValueKey('pick-${r.name}'),
+                title: Text(s.riwaya(r)),
+                trailing: r == _mushaf.riwaya ? const Icon(Icons.check) : null,
+                onTap: () => Navigator.pop(context, r),
+              ),
+          ],
+        ),
       ),
     );
     if (picked != null && picked != _mushaf.riwaya) await _switchRiwaya(picked);
@@ -109,8 +115,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
               leading: const Icon(Icons.copy),
               title: Text(s.copy),
               onTap: () {
-                Clipboard.setData(ClipboardData(
-                    text: '${aya.bareText}\n[${s.ayaRef(_mushaf.sura(aya.sura).nameAr, aya.no)} · ${s.riwaya(_mushaf.riwaya)}]'));
+                Clipboard.setData(
+                  ClipboardData(
+                    text:
+                        '${aya.bareText}\n[${s.ayaRef(_mushaf.sura(aya.sura).nameAr, aya.no)} · ${s.riwaya(_mushaf.riwaya)}]',
+                  ),
+                );
                 Navigator.pop(context);
                 ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(s.copied)));
               },
@@ -131,16 +141,50 @@ class _ReaderScreenState extends State<ReaderScreen> {
     });
   }
 
-  Widget _buildPage(int page) => page > _mushaf.pageCount
-      ? const SizedBox.shrink()
-      : MushafPage(
-          key: ValueKey('${_mushaf.riwaya.name}-$page'),
-          mushaf: _mushaf,
-          page: page,
-          highlighted: _highlighted,
-          onAyaLongPress: _ayaMenu,
-          tajweed: AppState.of(context).settings.tajweed,
-        );
+  bool get _showPrinted {
+    final app = AppState.of(context);
+    return app.settings.printed && app.pages.state(_mushaf.riwaya) == PackState.ready;
+  }
+
+  Widget _buildPage(int page) {
+    if (page > _mushaf.pageCount) return const SizedBox.shrink();
+    final app = AppState.of(context);
+    if (_showPrinted) {
+      return PrintedPage(
+        key: ValueKey('printed-${_mushaf.riwaya.name}-$page'),
+        store: app.pages,
+        mushaf: _mushaf,
+        page: page,
+        highlighted: _highlighted,
+        onAyaLongPress: _ayaMenu,
+      );
+    }
+    return MushafPage(
+      key: ValueKey('${_mushaf.riwaya.name}-$page'),
+      mushaf: _mushaf,
+      page: page,
+      highlighted: _highlighted,
+      onAyaLongPress: _ayaMenu,
+      tajweed: app.settings.tajweed,
+    );
+  }
+
+  /// Shown when printed pages are on but this riwaya's are not downloaded.
+  Widget? _missingPagesBanner() {
+    final app = AppState.of(context);
+    if (!app.settings.printed || !PageStore.supported) return null;
+    if (app.pages.state(_mushaf.riwaya) == PackState.ready) return null;
+    final s = S.of(context);
+    return MaterialBanner(
+      content: Text(s.printedMissing),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+          child: Text(s.download),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -159,30 +203,42 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ],
       ),
       body: SafeArea(
-        child: LayoutBuilder(builder: (context, box) {
-          final spread = _isSpread(box.biggest);
-          _ensureController(spread);
-          final count = spread ? (_mushaf.pageCount + 1) ~/ 2 : _mushaf.pageCount;
-          return Directionality(
-            textDirection: TextDirection.rtl,
-            child: PageView.builder(
-              key: ValueKey('${_mushaf.riwaya.name}-$spread'),
-              controller: _controller,
-              itemCount: count,
-              onPageChanged: _onIndex,
-              itemBuilder: (context, index) => spread
-                  ? Row(
-                      children: [
-                        Expanded(child: _buildPage(index * 2 + 1)),
-                        const VerticalDivider(width: 1),
-                        Expanded(child: _buildPage(index * 2 + 2)),
-                      ],
-                    )
-                  : _buildPage(index + 1),
-            ),
-          );
-        }),
+        child: ListenableBuilder(
+          listenable: AppState.of(context).pages,
+          builder: (context, _) => Column(
+            children: [
+              ?_missingPagesBanner(),
+              Expanded(child: _pages()),
+            ],
+          ),
+        ),
       ),
     );
   }
+
+  Widget _pages() => LayoutBuilder(
+    builder: (context, box) {
+      final spread = _isSpread(box.biggest);
+      _ensureController(spread);
+      final count = spread ? (_mushaf.pageCount + 1) ~/ 2 : _mushaf.pageCount;
+      return Directionality(
+        textDirection: TextDirection.rtl,
+        child: PageView.builder(
+          key: ValueKey('${_mushaf.riwaya.name}-$spread'),
+          controller: _controller,
+          itemCount: count,
+          onPageChanged: _onIndex,
+          itemBuilder: (context, index) => spread
+              ? Row(
+                  children: [
+                    Expanded(child: _buildPage(index * 2 + 1)),
+                    const VerticalDivider(width: 1),
+                    Expanded(child: _buildPage(index * 2 + 2)),
+                  ],
+                )
+              : _buildPage(index + 1),
+        ),
+      );
+    },
+  );
 }

@@ -16,9 +16,17 @@ class PageColors {
 
   static PageColors of(BuildContext context) => Theme.of(context).brightness == Brightness.dark
       ? const PageColors(
-          paper: Color(0xFF15181A), ink: Color(0xFFE8E4D8), frame: Color(0xFF3E6B57), mark: Color(0x334FB286))
+          paper: Color(0xFF15181A),
+          ink: Color(0xFFE8E4D8),
+          frame: Color(0xFF3E6B57),
+          mark: Color(0x334FB286),
+        )
       : const PageColors(
-          paper: Color(0xFFFFFCF2), ink: Color(0xFF1A1A1A), frame: Color(0xFF1B6B4A), mark: Color(0x33E0B04A));
+          paper: Color(0xFFFFFCF2),
+          ink: Color(0xFF1A1A1A),
+          frame: Color(0xFF1B6B4A),
+          mark: Color(0x33E0B04A),
+        );
 }
 
 sealed class _Block {}
@@ -95,15 +103,8 @@ class _MushafPageState extends State<MushafPage> {
 
   TextSpan _span(_Text block, double fs, PageColors c, Brightness b, {bool interactive = false}) {
     return TextSpan(
-      children: [
-        for (final a in block.ayat) _ayaSpan(a, c, b, interactive),
-      ],
-      style: TextStyle(
-        fontFamily: widget.mushaf.riwaya.fontFamily,
-        fontSize: fs,
-        height: _lineHeight,
-        color: c.ink,
-      ),
+      children: [for (final a in block.ayat) _ayaSpan(a, c, b, interactive)],
+      style: TextStyle(fontFamily: widget.mushaf.riwaya.fontFamily, fontSize: fs, height: _lineHeight, color: c.ink),
     );
   }
 
@@ -176,12 +177,57 @@ class _MushafPageState extends State<MushafPage> {
   Widget build(BuildContext context) {
     final c = PageColors.of(context);
     final brightness = Theme.of(context).brightness;
-    final s = S.of(context);
     final m = widget.mushaf;
-    final ayat = m.ayatOnPage(widget.page);
     final blocks = _blocks();
     _disposeRecognizers();
 
+    return PageFrame(
+      mushaf: m,
+      page: widget.page,
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final fs = _fit(blocks, box.biggest, c, brightness);
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: Column(
+              mainAxisAlignment: widget.page <= 2 ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final b in blocks)
+                  switch (b) {
+                    _Header() => _SuraHeader(header: b, fontSize: fs, mushaf: m, colors: c, tajweed: widget.tajweed),
+                    _Text() => Text.rich(
+                      _span(b, fs, c, brightness, interactive: true),
+                      textAlign: TextAlign.justify,
+                      textDirection: TextDirection.rtl,
+                    ),
+                  },
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The paper, the running head (sura and juz), the ruled frame and the page
+/// number shared by text pages and printed pages.
+class PageFrame extends StatelessWidget {
+  const PageFrame({super.key, required this.mushaf, required this.page, required this.child, this.ruled = true});
+
+  final Mushaf mushaf;
+  final int page;
+  final Widget child;
+
+  /// Draw the ruled frame; printed artwork brings its own margins.
+  final bool ruled;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = PageColors.of(context);
+    final s = S.of(context);
+    final first = mushaf.ayatOnPage(page).first;
     return Container(
       color: c.paper,
       padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
@@ -193,51 +239,31 @@ class _MushafPageState extends State<MushafPage> {
               textDirection: TextDirection.rtl,
               child: Row(
                 children: [
-                  Text(m.sura(ayat.first.sura).nameAr, style: TextStyle(fontFamily: m.riwaya.fontFamily, fontSize: 15)),
+                  Text(
+                    mushaf.sura(first.sura).nameAr,
+                    style: TextStyle(fontFamily: mushaf.riwaya.fontFamily, fontSize: 15),
+                  ),
                   const Spacer(),
-                  Text(S('ar').juz(ayat.first.juz)),
+                  Text(S('ar').juz(first.juz)),
                 ],
               ),
             ),
           ),
           Expanded(
             child: Container(
-              decoration: BoxDecoration(border: Border.all(color: c.frame, width: 1.2)),
+              decoration: ruled ? BoxDecoration(border: Border.all(color: c.frame, width: 1.2)) : null,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              child: LayoutBuilder(builder: (context, box) {
-                final fs = _fit(blocks, box.biggest, c, brightness);
-                return Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: Column(
-                    mainAxisAlignment:
-                        widget.page <= 2 ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final b in blocks)
-                        switch (b) {
-                          _Header() => _SuraHeader(
-                              header: b, fontSize: fs, mushaf: m, colors: c, tajweed: widget.tajweed),
-                          _Text() => Text.rich(
-                              _span(b, fs, c, brightness, interactive: true),
-                              textAlign: TextAlign.justify,
-                              textDirection: TextDirection.rtl,
-                            ),
-                        },
-                    ],
-                  ),
-                );
-              }),
+              child: child,
             ),
           ),
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Text(s.num(widget.page), style: TextStyle(color: c.frame, fontSize: 12)),
+            child: Text(s.num(page), style: TextStyle(color: c.frame, fontSize: 12)),
           ),
         ],
       ),
     );
   }
-
 }
 
 class _SuraHeader extends StatelessWidget {
@@ -279,19 +305,23 @@ class _SuraHeader extends StatelessWidget {
           ),
           if (header.basmala)
             Text.rich(
-              TextSpan(children: [
-                for (final (text, colour) in Tajweed.runs(
-                    mushaf.basmala, tajweed ? mushaf.basmalaTajweed : const []))
-                  TextSpan(
+              TextSpan(
+                children: [
+                  for (final (text, colour) in Tajweed.runs(mushaf.basmala, tajweed ? mushaf.basmalaTajweed : const []))
+                    TextSpan(
                       text: text,
-                      style: colour == null
-                          ? null
-                          : TextStyle(color: colour.of(Theme.of(context).brightness))),
-              ]),
+                      style: colour == null ? null : TextStyle(color: colour.of(Theme.of(context).brightness)),
+                    ),
+                ],
+              ),
               textAlign: TextAlign.center,
               textDirection: TextDirection.rtl,
               style: TextStyle(
-                  fontFamily: font, fontSize: fontSize, color: colors.ink, height: _MushafPageState._lineHeight),
+                fontFamily: font,
+                fontSize: fontSize,
+                color: colors.ink,
+                height: _MushafPageState._lineHeight,
+              ),
             ),
         ],
       ),

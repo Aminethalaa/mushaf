@@ -39,27 +39,26 @@ class _SearchScreenState extends State<SearchScreen> {
       body: _query.trim().length < 2
           ? const SizedBox.shrink()
           : _results.isEmpty
-              ? Center(child: Text(s.noResults))
-              : ListView.separated(
-                  itemCount: _results.length + 1,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, i) {
-                    if (i == 0) {
-                      return Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(s.resultsCount(_results.length)),
-                      );
-                    }
-                    final a = _results[i - 1];
-                    return ListTile(
-                      title: Text(a.text,
-                          textDirection: TextDirection.rtl,
-                          style: TextStyle(fontFamily: m.riwaya.fontFamily, fontSize: 20, height: 1.9)),
-                      subtitle: Text('${s.ayaRef(m.sura(a.sura).nameAr, a.no)} · ${s.page(a.page)}'),
-                      onTap: () => HomeScreen.open(context, m, a.page, focus: a),
-                    );
-                  },
-                ),
+          ? Center(child: Text(s.noResults))
+          : ListView.separated(
+              itemCount: _results.length + 1,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, i) {
+                if (i == 0) {
+                  return Padding(padding: const EdgeInsets.all(12), child: Text(s.resultsCount(_results.length)));
+                }
+                final a = _results[i - 1];
+                return ListTile(
+                  title: Text(
+                    a.text,
+                    textDirection: TextDirection.rtl,
+                    style: TextStyle(fontFamily: m.riwaya.fontFamily, fontSize: 20, height: 1.9),
+                  ),
+                  subtitle: Text('${s.ayaRef(m.sura(a.sura).nameAr, a.no)} · ${s.page(a.page)}'),
+                  onTap: () => HomeScreen.open(context, m, a.page, focus: a),
+                );
+              },
+            ),
     );
   }
 }

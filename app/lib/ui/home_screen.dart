@@ -11,9 +11,11 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   static void open(BuildContext context, Mushaf mushaf, int page, {Aya? focus}) {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-      builder: (_) => ReaderScreen(mushaf: mushaf, page: page, focus: focus),
-    ));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ReaderScreen(mushaf: mushaf, page: page, focus: focus),
+      ),
+    );
   }
 
   @override
@@ -53,17 +55,23 @@ class _Home extends StatelessWidget {
             IconButton(
               tooltip: s.search,
               icon: const Icon(Icons.search),
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute<void>(builder: (_) => SearchScreen(mushaf: mushaf))),
+              onPressed: () =>
+                  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SearchScreen(mushaf: mushaf))),
             ),
             IconButton(
               tooltip: s.settings,
               icon: const Icon(Icons.settings_outlined),
-              onPressed: () => Navigator.of(context)
-                  .push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen())),
+              onPressed: () =>
+                  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen())),
             ),
           ],
-          bottom: TabBar(tabs: [Tab(text: s.suras), Tab(text: s.ajza), Tab(text: s.bookmarks)]),
+          bottom: TabBar(
+            tabs: [
+              Tab(text: s.suras),
+              Tab(text: s.ajza),
+              Tab(text: s.bookmarks),
+            ],
+          ),
         ),
         body: Column(
           children: [
@@ -74,7 +82,8 @@ class _Home extends StatelessWidget {
                 leading: const Icon(Icons.menu_book),
                 title: Text(s.continueReading),
                 subtitle: Text(
-                    '${mushaf.sura(mushaf.ayatOnPage(last).first.sura).nameAr} · ${s.page(last)} · ${s.riwaya(mushaf.riwaya)}'),
+                  '${mushaf.sura(mushaf.ayatOnPage(last).first.sura).nameAr} · ${s.page(last)} · ${s.riwaya(mushaf.riwaya)}',
+                ),
                 trailing: const Icon(Icons.chevron_left),
                 onTap: () => HomeScreen.open(context, mushaf, last),
               ),
@@ -88,8 +97,11 @@ class _Home extends StatelessWidget {
                       final sura = mushaf.suras[i];
                       return ListTile(
                         leading: CircleAvatar(child: Text(s.num(sura.no))),
-                        title: Text(sura.nameAr,
-                            textDirection: TextDirection.rtl, style: TextStyle(fontFamily: font, fontSize: 20)),
+                        title: Text(
+                          sura.nameAr,
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(fontFamily: font, fontSize: 20),
+                        ),
                         subtitle: Text('${s.ar ? '' : '${sura.nameEn} · '}${s.ayatCount(sura.ayatCount)}'),
                         trailing: Text(s.num(sura.page)),
                         onTap: () => HomeScreen.open(context, mushaf, sura.page),
@@ -102,8 +114,10 @@ class _Home extends StatelessWidget {
                       final page = mushaf.firstPageOfJuz(i + 1);
                       return ListTile(
                         title: Text(s.juz(i + 1)),
-                        subtitle: Text(mushaf.sura(mushaf.ayatOnPage(page).first.sura).nameAr,
-                            style: TextStyle(fontFamily: font, fontSize: 16)),
+                        subtitle: Text(
+                          mushaf.sura(mushaf.ayatOnPage(page).first.sura).nameAr,
+                          style: TextStyle(fontFamily: font, fontSize: 16),
+                        ),
                         trailing: Text(s.num(page)),
                         onTap: () => HomeScreen.open(context, mushaf, page),
                       );
@@ -131,7 +145,12 @@ class _Bookmarks extends StatelessWidget {
     final app = AppState.of(context);
     final list = app.settings.bookmarks;
     if (list.isEmpty) {
-      return Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(s.noBookmarks, textAlign: TextAlign.center)));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(s.noBookmarks, textAlign: TextAlign.center),
+        ),
+      );
     }
     return ListView(
       children: [
@@ -144,11 +163,13 @@ class _Bookmarks extends StatelessWidget {
               final aya = m.nearest(b.sura, b.aya);
               return ListTile(
                 title: Text(s.ayaRef(m.sura(b.sura).nameAr, b.aya)),
-                subtitle: Text(aya.bareText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textDirection: TextDirection.rtl,
-                    style: TextStyle(fontFamily: m.riwaya.fontFamily, fontSize: 18)),
+                subtitle: Text(
+                  aya.bareText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(fontFamily: m.riwaya.fontFamily, fontSize: 18),
+                ),
                 trailing: Text(s.riwaya(b.riwaya), style: Theme.of(context).textTheme.bodySmall),
                 onTap: () => HomeScreen.open(context, m, aya.page, focus: aya),
               );

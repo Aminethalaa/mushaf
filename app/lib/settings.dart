@@ -43,24 +43,29 @@ class Settings extends ChangeNotifier {
 
   bool get onboarded => _prefs.getBool('onboarded') ?? false;
 
-  Riwaya get riwaya => Riwaya.values.firstWhere(
-        (r) => r.name == _prefs.getString('riwaya'),
-        orElse: () => Riwaya.warsh,
-      );
+  Riwaya get riwaya =>
+      Riwaya.values.firstWhere((r) => r.name == _prefs.getString('riwaya'), orElse: () => Riwaya.warsh);
 
   String get language => _prefs.getString('language') ?? 'ar';
 
   bool get night => _prefs.getBool('night') ?? false;
+
+  /// Show the printed Madinah pages instead of text pages, for each riwaya
+  /// whose pages are on the device.
+  bool get printed => _prefs.getBool('printed') ?? false;
+
+  Future<void> setPrinted(bool value) async {
+    await _prefs.setBool('printed', value);
+    notifyListeners();
+  }
 
   /// Tajweed colours, for the riwayat that have them (Hafs for now).
   bool get tajweed => _prefs.getBool('tajweed') ?? true;
 
   int lastPage(Riwaya r) => _prefs.getInt('lastPage.${r.name}') ?? 1;
 
-  List<Bookmark> get bookmarks => (_prefs.getStringList('bookmarks') ?? const [])
-      .map(Bookmark.decode)
-      .whereType<Bookmark>()
-      .toList();
+  List<Bookmark> get bookmarks =>
+      (_prefs.getStringList('bookmarks') ?? const []).map(Bookmark.decode).whereType<Bookmark>().toList();
 
   Future<void> completeOnboarding({required Riwaya riwaya, required String language}) async {
     await _prefs.setString('riwaya', riwaya.name);

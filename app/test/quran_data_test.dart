@@ -9,16 +9,26 @@ Mushaf _load(Riwaya r) => Mushaf.parse(r, File('assets/quran/${r.name}.json').re
 void main() {
   final hafs = _load(Riwaya.hafs);
   final warsh = _load(Riwaya.warsh);
-  final all = [for (final r in Riwaya.values) r == Riwaya.hafs ? hafs : r == Riwaya.warsh ? warsh : _load(r)];
+  final all = [
+    for (final r in Riwaya.values)
+      r == Riwaya.hafs
+          ? hafs
+          : r == Riwaya.warsh
+          ? warsh
+          : _load(r),
+  ];
 
   test('aya counts match each riwaya', () {
-    expect({for (final m in all) m.riwaya: m.ayat.length}, {
-      Riwaya.warsh: 6214, // Madani count
-      Riwaya.hafs: 6236, // Kufan count
-      Riwaya.qalon: 6214,
-      Riwaya.douri: 6217, // as published by KFGQPC
-      Riwaya.shubah: 6236,
-    });
+    expect(
+      {for (final m in all) m.riwaya: m.ayat.length},
+      {
+        Riwaya.warsh: 6214, // Madani count
+        Riwaya.hafs: 6236, // Kufan count
+        Riwaya.qalon: 6214,
+        Riwaya.douri: 6217, // as published by KFGQPC
+        Riwaya.shubah: 6236,
+      },
+    );
   });
 
   test('every riwaya has 114 suras whose aya counts add up', () {
@@ -89,7 +99,10 @@ void main() {
 
     String coloured(int sura, int aya, TajweedColor c) {
       final a = hafs.find(sura, aya)!;
-      return [for (final s in tajweed.ayat[a.index]) if (s.color == c) a.text.substring(s.start, s.end)].join('|');
+      return [
+        for (final s in tajweed.ayat[a.index])
+          if (s.color == c) a.text.substring(s.start, s.end),
+      ].join('|');
     }
 
     test('covers every aya, inside its text', () {

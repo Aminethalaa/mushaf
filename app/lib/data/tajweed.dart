@@ -67,9 +67,7 @@ class Tajweed {
     final rules = [for (final r in json['rules'] as List) _ruleColors[r]!];
     return Tajweed._([
       for (final aya in json['ayat'] as List)
-        [
-          for (final s in aya as List) TajweedSpan(rules[s[0] as int], s[1] as int, s[2] as int),
-        ],
+        [for (final s in aya as List) TajweedSpan(rules[s[0] as int], s[1] as int, s[2] as int)],
     ]);
   }
 
