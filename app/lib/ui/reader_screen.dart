@@ -117,6 +117,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           page: page,
           highlighted: _highlighted,
           onAyaLongPress: _ayaMenu,
+          tajweed: AppState.of(context).settings.tajweed,
         );
 
   @override

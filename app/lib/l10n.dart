@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import 'data/quran.dart';
+import 'data/tajweed.dart';
 
 /// Interface strings in Arabic and French. The Quran text itself is never translated.
 class S {
@@ -38,6 +39,21 @@ class S {
   String get removeBookmark => _t('احذف من المفضلة', 'Retirer des favoris');
   String get switchRiwaya => _t('بدّل الرواية', 'Changer de riwaya');
   String get localOnly => _t('القراءة الحرة تُحفظ على هذا الجهاز فقط.', 'La lecture libre reste sur cet appareil.');
+  String get tajweed => _t('ألوان التجويد', 'Couleurs du tajwid');
+  String get tajweedHint => _t('متاحة لرواية حفص. ألوان ورش تنتظر مصدراً مرخّصاً.',
+      'Disponibles pour Ḥafṣ. Celles de Warsh attendent une source sous licence.');
+  String get tajweedSource => _t(
+      'أحكام التجويد مستخرجة آلياً بقواعد مشروع quran-tajweed (رخصة CC BY 4.0).',
+      'Règles de tajwid calculées avec les arbres du projet quran-tajweed (licence CC BY 4.0).');
+  String tajweedColor(TajweedColor c) => switch (c) {
+        TajweedColor.silent => _t('لا يُلفظ: همزة الوصل، اللام الشمسية، الإدغام بلا غنة', 'Non prononcé : hamzat al-waṣl, lām shamsiyya, idghām sans ghunna'),
+        TajweedColor.madd2 => _t('مدّ حركتين', 'Madd de 2 temps'),
+        TajweedColor.madd246 => _t('مدّ جائز ٢ أو ٤ أو ٦', 'Madd permis : 2, 4 ou 6 temps'),
+        TajweedColor.maddWajib => _t('مدّ واجب أو منفصل ٤ أو ٥', 'Madd obligatoire ou séparé : 4 ou 5 temps'),
+        TajweedColor.madd6 => _t('مدّ لازم ٦ حركات', 'Madd nécessaire : 6 temps'),
+        TajweedColor.ghunnah => _t('غنّة، إخفاء، إقلاب، إدغام بغنّة', 'Ghunna, ikhfāʾ, iqlāb, idghām avec ghunna'),
+        TajweedColor.qalqalah => _t('قلقلة', 'Qalqala'),
+      };
   String get sourceNote => _t('النص من مجمع الملك فهد لطباعة المصحف الشريف.', "Texte du Complexe du Roi Fahd pour l'impression du Coran.");
 
   String riwaya(Riwaya r) => switch (r) {

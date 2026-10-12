@@ -10,6 +10,7 @@
 - الصفحة مرسومة من النص بخط مجمع الملك فهد، وحجم الخط يُختار تلقائياً لتملأ الصفحة.
 - صفحتان متقابلتان على التابلت في الوضع الأفقي.
 - فهرس السور والأجزاء، بحث يتجاهل التشكيل، مفضلة بالضغط المطوّل على الآية، نسخ الآية.
+- ألوان التجويد لرواية حفص (تُطفأ من الإعدادات)، مع دليل الألوان. ورش بلا ألوان حتى يتوفر مصدر مرخّص.
 - شاشة ترحيب تسأل عن الرواية واللغة (العربية أو الفرنسية)، ووضع ليلي.
 - القراءة الحرة تُحفظ على الجهاز فقط. الورد والحسابات والمزامنة في المراحل 2 و3.
 
@@ -20,7 +21,9 @@
 | `app/` | Flutter app (Android, iOS, web) |
 | `app/assets/quran/{hafs,warsh}.json` | Text generated from the KFGQPC data, never edited by hand |
 | `app/assets/fonts/` | KFGQPC Uthmanic fonts for each riwaya |
+| `app/assets/quran/hafs_tajweed.json` | Tajweed colouring of the Hafs text, generated |
 | `tools/build_quran_data.py` | Regenerates the assets from a checkout of the KFGQPC data |
+| `tools/build_tajweed.py` | Regenerates the Hafs tajweed colouring |
 
 ## Text source
 
@@ -36,6 +39,20 @@ To regenerate:
 git clone --depth 1 https://github.com/thetruetruth/quran-data-kfgqpc /tmp/kfgqpc
 python3 tools/build_quran_data.py /tmp/kfgqpc
 ```
+
+## Tajweed colours (Hafs)
+
+The rules are the decision trees of [cpfair/quran-tajweed](https://github.com/cpfair/quran-tajweed)
+(data under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), credited in the app's settings),
+run on the KFGQPC Hafs text after rewriting its marks into the Tanzil conventions the trees
+were trained on. The rule counts match that project's published data on 6222 of 6236 ayat.
+
+```sh
+git clone --depth 1 https://github.com/cpfair/quran-tajweed /tmp/quran-tajweed
+python3 tools/build_tajweed.py /tmp/quran-tajweed
+```
+
+No open, licensed tajweed data exists for Warsh yet.
 
 ## Develop
 

@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../data/quran.dart';
+import '../data/tajweed.dart';
 import '../l10n.dart';
 
 /// Colours of the printed page, in day and night.
@@ -42,10 +43,14 @@ class MushafPage extends StatefulWidget {
     required this.page,
     this.highlighted = const {},
     this.onAyaLongPress,
+    this.tajweed = false,
   });
 
   final Mushaf mushaf;
   final int page;
+
+  /// Colour the text by tajweed rule, when the riwaya has the data.
+  final bool tajweed;
   final Set<int> highlighted;
   final void Function(Aya aya)? onAyaLongPress;
 
@@ -86,17 +91,12 @@ class _MushafPageState extends State<MushafPage> {
 
   double _headerHeight(double fs, _Header h) => fs * 2.4 + (h.basmala ? fs * _lineHeight : 0) + 8;
 
-  TextSpan _span(_Text block, double fs, PageColors c, {bool interactive = false}) {
+  List<TajweedSpan>? _coloursOf(Aya a) => widget.tajweed ? widget.mushaf.tajweed?.ayat[a.index] : null;
+
+  TextSpan _span(_Text block, double fs, PageColors c, Brightness b, {bool interactive = false}) {
     return TextSpan(
       children: [
-        for (final a in block.ayat)
-          TextSpan(
-            text: '${a.text} ',
-            style: widget.highlighted.contains(a.index) ? TextStyle(backgroundColor: c.mark) : null,
-            recognizer: !interactive || widget.onAyaLongPress == null
-                ? null
-                : (LongPressGestureRecognizer()..onLongPress = () => widget.onAyaLongPress!(a)),
-          ),
+        for (final a in block.ayat) _ayaSpan(a, c, b, interactive),
       ],
       style: TextStyle(
         fontFamily: widget.mushaf.riwaya.fontFamily,
@@ -107,7 +107,37 @@ class _MushafPageState extends State<MushafPage> {
     );
   }
 
-  double _measure(List<_Block> blocks, double fs, double width, PageColors c) {
+  TextSpan _ayaSpan(Aya a, PageColors c, Brightness b, bool interactive) {
+    final background = widget.highlighted.contains(a.index) ? c.mark : null;
+    LongPressGestureRecognizer? recognizer;
+    if (interactive && widget.onAyaLongPress != null) {
+      recognizer = LongPressGestureRecognizer()..onLongPress = () => widget.onAyaLongPress!(a);
+      _recognizers.add(recognizer);
+    }
+    final colours = _coloursOf(a);
+    if (colours == null || colours.isEmpty) {
+      return TextSpan(
+        text: '${a.text} ',
+        style: background == null ? null : TextStyle(backgroundColor: background),
+        recognizer: recognizer,
+      );
+    }
+    // A gesture only reaches the innermost span, so every run carries the
+    // aya's recognizer.
+    return TextSpan(
+      style: background == null ? null : TextStyle(backgroundColor: background),
+      children: [
+        for (final (text, colour) in Tajweed.runs('${a.text} ', colours))
+          TextSpan(
+            text: text,
+            style: colour == null ? null : TextStyle(color: colour.of(b)),
+            recognizer: recognizer,
+          ),
+      ],
+    );
+  }
+
+  double _measure(List<_Block> blocks, double fs, double width, PageColors c, Brightness brightness) {
     var h = 0.0;
     for (final b in blocks) {
       switch (b) {
@@ -115,7 +145,7 @@ class _MushafPageState extends State<MushafPage> {
           h += _headerHeight(fs, b);
         case _Text():
           final tp = TextPainter(
-            text: _span(b, fs, c),
+            text: _span(b, fs, c, brightness),
             textDirection: TextDirection.rtl,
             textAlign: TextAlign.justify,
           )..layout(maxWidth: width);
@@ -127,12 +157,12 @@ class _MushafPageState extends State<MushafPage> {
   }
 
   /// The largest font size at which the page fits, found by bisection.
-  double _fit(List<_Block> blocks, Size size, PageColors c) {
+  double _fit(List<_Block> blocks, Size size, PageColors c, Brightness b) {
     // The first two pages are short and centred, as in print; don't let them balloon.
     var lo = 8.0, hi = size.width / (widget.page <= 2 ? 13 : 9);
     for (var i = 0; i < 14; i++) {
       final mid = (lo + hi) / 2;
-      if (_measure(blocks, mid, size.width, c) <= size.height) {
+      if (_measure(blocks, mid, size.width, c, b) <= size.height) {
         lo = mid;
       } else {
         hi = mid;
@@ -145,6 +175,7 @@ class _MushafPageState extends State<MushafPage> {
   @override
   Widget build(BuildContext context) {
     final c = PageColors.of(context);
+    final brightness = Theme.of(context).brightness;
     final s = S.of(context);
     final m = widget.mushaf;
     final ayat = m.ayatOnPage(widget.page);
@@ -174,7 +205,7 @@ class _MushafPageState extends State<MushafPage> {
               decoration: BoxDecoration(border: Border.all(color: c.frame, width: 1.2)),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               child: LayoutBuilder(builder: (context, box) {
-                final fs = _fit(blocks, box.biggest, c);
+                final fs = _fit(blocks, box.biggest, c, brightness);
                 return Directionality(
                   textDirection: TextDirection.rtl,
                   child: Column(
@@ -184,9 +215,10 @@ class _MushafPageState extends State<MushafPage> {
                     children: [
                       for (final b in blocks)
                         switch (b) {
-                          _Header() => _SuraHeader(header: b, fontSize: fs, mushaf: m, colors: c),
+                          _Header() => _SuraHeader(
+                              header: b, fontSize: fs, mushaf: m, colors: c, tajweed: widget.tajweed),
                           _Text() => Text.rich(
-                              _span(b, fs, c, interactive: true)..children!.forEach(_collect),
+                              _span(b, fs, c, brightness, interactive: true),
                               textAlign: TextAlign.justify,
                               textDirection: TextDirection.rtl,
                             ),
@@ -206,20 +238,22 @@ class _MushafPageState extends State<MushafPage> {
     );
   }
 
-  void _collect(InlineSpan span) {
-    if (span is TextSpan && span.recognizer is LongPressGestureRecognizer) {
-      _recognizers.add(span.recognizer! as LongPressGestureRecognizer);
-    }
-  }
 }
 
 class _SuraHeader extends StatelessWidget {
-  const _SuraHeader({required this.header, required this.fontSize, required this.mushaf, required this.colors});
+  const _SuraHeader({
+    required this.header,
+    required this.fontSize,
+    required this.mushaf,
+    required this.colors,
+    required this.tajweed,
+  });
 
   final _Header header;
   final double fontSize;
   final Mushaf mushaf;
   final PageColors colors;
+  final bool tajweed;
 
   @override
   Widget build(BuildContext context) {
@@ -244,8 +278,16 @@ class _SuraHeader extends StatelessWidget {
             ),
           ),
           if (header.basmala)
-            Text(
-              mushaf.basmala,
+            Text.rich(
+              TextSpan(children: [
+                for (final (text, colour) in Tajweed.runs(
+                    mushaf.basmala, tajweed ? mushaf.basmalaTajweed : const []))
+                  TextSpan(
+                      text: text,
+                      style: colour == null
+                          ? null
+                          : TextStyle(color: colour.of(Theme.of(context).brightness))),
+              ]),
               textAlign: TextAlign.center,
               textDirection: TextDirection.rtl,
               style: TextStyle(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/quran.dart';
+import '../data/tajweed.dart';
 import '../l10n.dart';
 import '../main.dart';
 
@@ -40,7 +41,22 @@ class SettingsScreen extends StatelessWidget {
             onChanged: settings.setNight,
           ),
           const Divider(),
-          ListTile(subtitle: Text('${s.localOnly}\n${s.sourceNote}')),
+          SwitchListTile(
+            key: const ValueKey('tajweed-switch'),
+            title: Text(s.tajweed),
+            subtitle: Text(s.tajweedHint),
+            value: settings.tajweed,
+            onChanged: settings.setTajweed,
+          ),
+          if (settings.tajweed)
+            for (final c in TajweedColor.values)
+              ListTile(
+                dense: true,
+                leading: Icon(Icons.circle, color: c.of(Theme.of(context).brightness)),
+                title: Text(s.tajweedColor(c)),
+              ),
+          const Divider(),
+          ListTile(subtitle: Text('${s.localOnly}\n${s.sourceNote}\n${s.tajweedSource}')),
         ],
       ),
     );

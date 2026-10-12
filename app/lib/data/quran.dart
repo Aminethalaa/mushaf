@@ -2,13 +2,19 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart' show rootBundle;
 
-enum Riwaya {
-  warsh('Warsh'),
-  hafs('Hafs');
+import 'tajweed.dart';
 
-  const Riwaya(this.fontFamily);
+enum Riwaya {
+  warsh('Warsh', null),
+  hafs('Hafs', 'assets/quran/hafs_tajweed.json');
+
+  const Riwaya(this.fontFamily, this.tajweedAsset);
 
   final String fontFamily;
+
+  /// Tajweed colouring, where an open, licensed source exists. There is none
+  /// for Warsh yet.
+  final String? tajweedAsset;
 
   Riwaya get other => this == warsh ? hafs : warsh;
 }
@@ -87,9 +93,14 @@ class Mushaf {
     return starts;
   }
 
+  /// Colouring per aya, by [Aya.index]; null when this riwaya has none.
+  Tajweed? tajweed;
+
   static Future<Mushaf> load(Riwaya riwaya) async {
     final raw = await rootBundle.loadString('assets/quran/${riwaya.name}.json');
-    return parse(riwaya, raw);
+    final m = parse(riwaya, raw);
+    if (riwaya.tajweedAsset != null) m.tajweed = await Tajweed.load(riwaya.tajweedAsset!);
+    return m;
   }
 
   static Mushaf parse(Riwaya riwaya, String raw) {
@@ -130,10 +141,17 @@ class Mushaf {
 
   /// The basmala printed above each sura, in this riwaya's own orthography.
   /// Taken from An-Naml 27:30, so it is never typed by hand.
-  late final String basmala = () {
-    final t = find(27, 30)!.bareText;
-    return t.substring(t.indexOf('\u0628\u0650\u0633'));
-  }();
+  late final String basmala = find(27, 30)!.bareText.substring(_basmalaStart);
+
+  late final int _basmalaStart = find(27, 30)!.bareText.indexOf('\u0628\u0650\u0633');
+
+  /// The tajweed colouring of [basmala], taken from 27:30 like the text.
+  List<TajweedSpan> get basmalaTajweed => [
+        for (final s in tajweed?.ayat[find(27, 30)!.index] ?? const <TajweedSpan>[])
+          if (s.end > _basmalaStart)
+            TajweedSpan(s.color, (s.start - _basmalaStart).clamp(0, basmala.length),
+                (s.end - _basmalaStart).clamp(0, basmala.length)),
+      ];
 
   /// Al-Fatiha's first aya in Hafs is the basmala itself; in Warsh it is not counted.
   bool printsBasmala(int sura) => sura != 9 && !(sura == 1 && riwaya == Riwaya.hafs);

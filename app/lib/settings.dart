@@ -52,6 +52,9 @@ class Settings extends ChangeNotifier {
 
   bool get night => _prefs.getBool('night') ?? false;
 
+  /// Tajweed colours, for the riwayat that have them (Hafs for now).
+  bool get tajweed => _prefs.getBool('tajweed') ?? true;
+
   int lastPage(Riwaya r) => _prefs.getInt('lastPage.${r.name}') ?? 1;
 
   List<Bookmark> get bookmarks => (_prefs.getStringList('bookmarks') ?? const [])
@@ -78,6 +81,11 @@ class Settings extends ChangeNotifier {
 
   Future<void> setNight(bool value) async {
     await _prefs.setBool('night', value);
+    notifyListeners();
+  }
+
+  Future<void> setTajweed(bool value) async {
+    await _prefs.setBool('tajweed', value);
     notifyListeners();
   }
 

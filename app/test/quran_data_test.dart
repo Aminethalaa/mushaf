@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mushaf/data/quran.dart';
+import 'package:mushaf/data/tajweed.dart';
 
 Mushaf _load(Riwaya r) => Mushaf.parse(r, File('assets/quran/${r.name}.json').readAsStringSync());
 
@@ -69,5 +70,43 @@ void main() {
 
   test('copied text drops the aya number', () {
     expect(hafs.find(112, 1)!.bareText.contains('١'), isFalse);
+  });
+
+  group('Hafs tajweed', () {
+    final tajweed = Tajweed.parse(File('assets/quran/hafs_tajweed.json').readAsStringSync());
+    hafs.tajweed = tajweed;
+
+    String coloured(int sura, int aya, TajweedColor c) {
+      final a = hafs.find(sura, aya)!;
+      return [for (final s in tajweed.ayat[a.index]) if (s.color == c) a.text.substring(s.start, s.end)].join('|');
+    }
+
+    test('covers every aya, inside its text', () {
+      expect(tajweed.ayat.length, hafs.ayat.length);
+      for (final a in hafs.ayat) {
+        for (final s in tajweed.ayat[a.index]) {
+          expect(s.start, lessThan(s.end));
+          expect(s.end, lessThanOrEqualTo(a.text.length), reason: '${a.sura}:${a.no}');
+        }
+      }
+    });
+
+    test('marks well-known rules', () {
+      // ٱلضَّآلِّينَ: six-count madd before the doubled lam.
+      expect(coloured(1, 7, TajweedColor.madd6), contains('\u0653'));
+      // أَلِيمُۢ بِمَا: iqlab of the tanween before ba.
+      expect(coloured(2, 10, TajweedColor.ghunnah), contains('\u06e2'));
+      // ٱلۡفَلَقِ: qalqalah on the final qaf.
+      expect(coloured(113, 1, TajweedColor.qalqalah), contains('\u0642'));
+    });
+
+    test('runs rebuild the text exactly', () {
+      for (final a in hafs.ayat.take(300)) {
+        final runs = Tajweed.runs(a.text, tajweed.ayat[a.index]);
+        expect(runs.map((r) => r.$1).join(), a.text);
+      }
+      expect(Tajweed.runs(hafs.basmala, hafs.basmalaTajweed).map((r) => r.$1).join(), hafs.basmala);
+      expect(hafs.basmalaTajweed, isNotEmpty);
+    });
   });
 }
