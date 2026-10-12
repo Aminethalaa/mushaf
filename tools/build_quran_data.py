@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Converts the KFGQPC Hafs and Warsh data into the compact assets the app loads.
+"""Converts the KFGQPC data for each riwaya into the compact assets the app loads.
 
 Usage: python3 tools/build_quran_data.py <path to quran-data-kfgqpc checkout>
 
@@ -14,6 +14,9 @@ from pathlib import Path
 SOURCES = {
     "hafs": ("hafs/data/hafsData_v18.json", "hafs/font/hafs.18.ttf", "sora", "sora_name_ar", 6236),
     "warsh": ("warsh/data/warshData_v10.json", "warsh/font/warsh.10.ttf", "sura_no", "sura_name_ar", 6214),
+    "qalon": ("qaloon/data/QaloonData_v10.json", "qaloon/font/qaloon.10.ttf", "sura_no", "sura_name_ar", 6214),
+    "douri": ("doori/data/DooriData_v09.json", "doori/font/doori.9.ttf", "sura_no", "sura_name_ar", 6217),
+    "shubah": ("shouba/data/ShoubaData08.json", "shouba/font/shouba.8.ttf", "sura_no", "sura_name_ar", 6236),
 }
 PAGES = 604
 SURAS = 114
@@ -49,7 +52,9 @@ def build(src: Path, out: Path, riwaya: str) -> dict:
 
     assert len(suras) == SURAS, f"{riwaya}: {len(suras)} suras"
     first_pages = {a[2] for a in ayat}
-    assert first_pages == set(range(1, PAGES + 1)) or riwaya == "warsh", f"{riwaya}: page gaps"
+    # A page can be entirely the tail of an aya begun on the page before.
+    missing = set(range(1, PAGES + 1)) - first_pages
+    assert all(any(a[2] < p <= a[3] for a in ayat) for p in missing), f"{riwaya}: page gaps"
     assert max(a[3] for a in ayat) == PAGES
 
     payload = {

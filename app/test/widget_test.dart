@@ -12,10 +12,13 @@ void main() {
     await tester.pump();
 
     final start = find.byKey(const ValueKey('start'));
+    await tester.scrollUntilVisible(start, 200);
     expect(tester.widget<FilledButton>(start).onPressed, isNull);
 
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('riwaya-warsh')), -200);
     await tester.tap(find.byKey(const ValueKey('riwaya-warsh')));
     await tester.pump();
+    await tester.scrollUntilVisible(start, 200);
     expect(tester.widget<FilledButton>(start).onPressed, isNotNull);
 
     await tester.tap(start);

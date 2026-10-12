@@ -59,6 +59,9 @@ class S {
   String riwaya(Riwaya r) => switch (r) {
         Riwaya.warsh => _t('ورش عن نافع', 'Warsh ʿan Nāfiʿ'),
         Riwaya.hafs => _t('حفص عن عاصم', 'Ḥafṣ ʿan ʿĀṣim'),
+        Riwaya.qalon => _t('قالون عن نافع', 'Qālūn ʿan Nāfiʿ'),
+        Riwaya.douri => _t('الدوري عن أبي عمرو', 'Ad-Dūrī ʿan Abī ʿAmr'),
+        Riwaya.shubah => _t('شعبة عن عاصم', 'Shuʿba ʿan ʿĀṣim'),
       };
 
   String page(int n) => _t('صفحة ${arNum(n)}', 'Page $n');

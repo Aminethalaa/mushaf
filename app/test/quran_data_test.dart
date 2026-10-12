@@ -9,22 +9,28 @@ Mushaf _load(Riwaya r) => Mushaf.parse(r, File('assets/quran/${r.name}.json').re
 void main() {
   final hafs = _load(Riwaya.hafs);
   final warsh = _load(Riwaya.warsh);
+  final all = [for (final r in Riwaya.values) r == Riwaya.hafs ? hafs : r == Riwaya.warsh ? warsh : _load(r)];
 
   test('aya counts match each riwaya', () {
-    expect(hafs.ayat.length, 6236);
-    expect(warsh.ayat.length, 6214);
+    expect({for (final m in all) m.riwaya: m.ayat.length}, {
+      Riwaya.warsh: 6214, // Madani count
+      Riwaya.hafs: 6236, // Kufan count
+      Riwaya.qalon: 6214,
+      Riwaya.douri: 6217, // as published by KFGQPC
+      Riwaya.shubah: 6236,
+    });
   });
 
-  test('both have 114 suras whose aya counts add up', () {
-    for (final m in [hafs, warsh]) {
+  test('every riwaya has 114 suras whose aya counts add up', () {
+    for (final m in all) {
       expect(m.suras.length, 114);
       expect(m.suras.fold<int>(0, (n, s) => n + s.ayatCount), m.ayat.length);
-      expect(m.sura(2).ayatCount, m.riwaya == Riwaya.hafs ? 286 : 285);
+      expect(m.sura(2).ayatCount, {Riwaya.hafs: 286, Riwaya.shubah: 286}[m.riwaya] ?? 285, reason: m.riwaya.name);
     }
   });
 
   test('every one of the 604 pages has ayat, in order', () {
-    for (final m in [hafs, warsh]) {
+    for (final m in all) {
       expect(m.pageCount, 604);
       var previous = -1;
       for (var p = 1; p <= 604; p++) {
@@ -38,7 +44,7 @@ void main() {
   });
 
   test('30 juz, each starting on a later page', () {
-    for (final m in [hafs, warsh]) {
+    for (final m in all) {
       var page = 0;
       for (var j = 1; j <= 30; j++) {
         expect(m.firstPageOfJuz(j), greaterThan(page));
@@ -53,6 +59,11 @@ void main() {
     expect(hafs.printsBasmala(1), isFalse);
     expect(warsh.printsBasmala(1), isTrue);
     expect(warsh.printsBasmala(9), isFalse);
+    for (final m in all) {
+      expect(m.basmala, startsWith('بِسۡمِ'.substring(0, 1)), reason: m.riwaya.name);
+      expect(m.basmala.length, greaterThan(20), reason: m.riwaya.name);
+      expect(m.printsBasmala(1), m.ayat.length != 6236, reason: m.riwaya.name);
+    }
   });
 
   test('search ignores diacritics and letter forms', () {

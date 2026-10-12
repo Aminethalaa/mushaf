@@ -55,10 +55,32 @@ class _ReaderScreenState extends State<ReaderScreen> {
     AppState.of(context).settings.setLastPage(_mushaf.riwaya, page);
   }
 
-  Future<void> _switchRiwaya() async {
+  Future<void> _pickRiwaya() async {
+    final s = S.of(context);
+    final picked = await showModalBottomSheet<Riwaya>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(title: Text(s.switchRiwaya)),
+          for (final r in Riwaya.values)
+            ListTile(
+              key: ValueKey('pick-${r.name}'),
+              title: Text(s.riwaya(r)),
+              trailing: r == _mushaf.riwaya ? const Icon(Icons.check) : null,
+              onTap: () => Navigator.pop(context, r),
+            ),
+        ]),
+      ),
+    );
+    if (picked != null && picked != _mushaf.riwaya) await _switchRiwaya(picked);
+  }
+
+  /// Opens [to] at the aya this page starts with. Counts differ between
+  /// riwayat, so the place is matched by sura and aya number, not by page.
+  Future<void> _switchRiwaya(Riwaya to) async {
     final app = AppState.of(context);
     final current = _mushaf.ayatOnPage(_page).first;
-    final other = await app.mushaf(_mushaf.riwaya.other);
+    final other = await app.mushaf(to);
     final target = other.nearest(current.sura, current.no);
     await app.settings.setRiwaya(other.riwaya);
     if (!mounted) return;
@@ -130,7 +152,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         actions: [
           TextButton.icon(
             key: const ValueKey('switch-riwaya'),
-            onPressed: _switchRiwaya,
+            onPressed: _pickRiwaya,
             icon: const Icon(Icons.swap_horiz),
             label: Text(s.riwaya(_mushaf.riwaya)),
           ),

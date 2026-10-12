@@ -6,7 +6,10 @@ import 'tajweed.dart';
 
 enum Riwaya {
   warsh('Warsh', null),
-  hafs('Hafs', 'assets/quran/hafs_tajweed.json');
+  hafs('Hafs', 'assets/quran/hafs_tajweed.json'),
+  qalon('Qalon', null),
+  douri('Douri', null),
+  shubah('Shubah', null);
 
   const Riwaya(this.fontFamily, this.tajweedAsset);
 
@@ -15,8 +18,6 @@ enum Riwaya {
   /// Tajweed colouring, where an open, licensed source exists. There is none
   /// for Warsh yet.
   final String? tajweedAsset;
-
-  Riwaya get other => this == warsh ? hafs : warsh;
 }
 
 class Sura {
@@ -153,8 +154,9 @@ class Mushaf {
                 (s.end - _basmalaStart).clamp(0, basmala.length)),
       ];
 
-  /// Al-Fatiha's first aya in Hafs is the basmala itself; in Warsh it is not counted.
-  bool printsBasmala(int sura) => sura != 9 && !(sura == 1 && riwaya == Riwaya.hafs);
+  /// In the Kufan count (Hafs, Shu'bah) Al-Fatiha's first aya is the basmala
+  /// itself; in the others it is printed above the sura and not counted.
+  bool printsBasmala(int sura) => sura != 9 && !(sura == 1 && ayat.first.text.startsWith(basmala));
 
   int juzOfPage(int page) => ayatOnPage(page).first.juz;
 

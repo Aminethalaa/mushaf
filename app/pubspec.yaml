@@ -29,3 +29,12 @@ flutter:
     - family: Warsh
       fonts:
         - asset: assets/fonts/warsh.ttf
+    - family: Qalon
+      fonts:
+        - asset: assets/fonts/qalon.ttf
+    - family: Douri
+      fonts:
+        - asset: assets/fonts/douri.ttf
+    - family: Shubah
+      fonts:
+        - asset: assets/fonts/shubah.ttf
